@@ -28,7 +28,7 @@ async def eth_to_token(
     fee = await eth_to_exchange.div(500)
     k = await (init_eth_pool * init_token_pool)
     new_eth_pool = init_eth_pool + eth_to_exchange
-    new_token_pool = await k.div(new_eth_pool - fee)
+    new_token_pool = await k.div(await (new_eth_pool - fee).open())
     tokens_to_receive = init_token_pool - new_token_pool
 
     return (tokens_to_receive, new_eth_pool, new_token_pool)
