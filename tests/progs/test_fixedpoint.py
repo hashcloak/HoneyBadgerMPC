@@ -67,6 +67,45 @@ async def test_fixedpoint_mul(test_preprocessing, test_runner):
 
 
 @mark.asyncio
+async def test_fixedpoint_division(test_preprocessing, test_runner):
+    iters = 1
+    aval = [random.random() * 100 for _ in range(0, iters)]
+    bval = [random.random() * 100 for _ in range(0, iters)]
+
+    async def _prog(context):
+        context.preproc = FakePreProcessedElements()
+        for i in range(0, iters):
+            # Create fixedpoint from float/int
+            a1 = FixedPoint(context, aval[i])
+            b1 = FixedPoint(context, bval[i])
+            c1 = await a1.div(b1)
+            assert approx_equal(await c1.open(), aval[i] / bval[i])
+
+            def as_clear_share(ctx, x):
+                return FixedPoint(context, context.Share(x * 2 ** 32))
+
+            def as_secret_share(ctx, x):
+                return FixedPoint(
+                    context,
+                    context.Share(x * 2 ** 32) + context.preproc.get_zero(context),
+                )
+
+            # Create fixedpoint as public value
+            a2 = as_clear_share(context, aval[i])
+            b2 = as_clear_share(context, bval[i])
+            c2 = await a2.div(b2)
+            assert approx_equal(await c2.open(), aval[i] / bval[i])
+
+            # Create fixedpoint as secret share
+            a3 = as_secret_share(context, aval[i])
+            b3 = as_secret_share(context, bval[i])
+            c3 = await a3.div(b3)
+            assert approx_equal(await c3.open(), aval[i] / bval[i])
+
+    await run_test_program(_prog, test_runner)
+
+
+@mark.asyncio
 async def test_fixedpoint_comparison(test_preprocessing, test_runner):
     iters = 1
     aval = [random.random() * 100 for _ in range(0, iters)]
